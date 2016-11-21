@@ -26,4 +26,11 @@ def data2file(data, index = 0):
     out = file(filename, 'w')
     out.write(str(data))
 
+def file2data(filename):
+    data = []
+    inp = file(filename, 'r')
+    for line in inp:
+        data.append(line.split(', '))
+    return data
+
 data2file(convert_image('image.jpg'))
