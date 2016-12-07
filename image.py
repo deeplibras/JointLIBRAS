@@ -5,46 +5,23 @@ def convert_image(filename):
     image = Image.open(filename)
     height, width =  image.size
     pixels = image.load()
+    luminosity_grayscale = np.zeros((width, height))
 
-    data = []
     for y in range(width):
         for x in range(height):
             r, g, b = pixels[x, y];
 
-            # Converting RGB to grayscale by LUMINOSITY
-            # Luminosity: More contrast
-            # Average: Same as the original image or less contrast
-            # Lightness: Less contrast
-            luminosity_grayscale = round(r * 0.21 + g * 0.72 + b * 0.07);
+            # Converting RGB to grayscale by LUMINOSITY for more contrast
+            luminosity_grayscale[x][y] = round(r * 0.21 + g * 0.72 + b * 0.07);
 
-            # grays = [' ','.',':','-','=','+','*','#','%','@']
-            # datastring += " "+ str((grays[luminosity_grayscale]/25.5)-1)
-            # if(x == width-1):
-            #     datastring += "\n"
-            print(luminosity_grayscale)
-            data.append(luminosity_grayscale)
+    return luminosity_grayscale
 
-    return data
+# Rather than using HDF, it was save in NPY, ONE numpy array in a compressed file
+# Still can be improved by use savez_compressed, to save more than one array in a unique file
+def data2file(data, index = 0):
+    np.save("image"+str(index), data)
 
-# # TODO: Try to make a .h5(HDF5) to make it faster and smaller(maybe)
-# # Is being faster to "raster" image to array "on the fly" than write/read from a text file
-# def data2file(data, index = 0):
-#     data = str(data).replace('[','')
-#     data = data.replace(']','')
-#     data = data.replace(')]','')
-#     data = data.replace('), ','\n')
-#     data = data.replace('(','')
-#     data = data.replace(')','')
-#
-#     filename = 'input' + str(index) + '.in'
-#     out = file(filename, 'w')
-#     out.write(str(data))
-#
-# def file2data(filename):
-#     data = []
-#     inp = file(filename, 'r')
-#     for line in inp:
-#         data.append(line.split(', '))
-#     return data
+def file2data(filename, index = 0):
+    return np.load("image"+str(index)+".npy")
 
-print(str(convert_image('image.jpg')))
+print(file2data(data2file(convert_image('image.jpg'))))
