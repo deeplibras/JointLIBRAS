@@ -6,7 +6,7 @@ from tflearn.data_utils import image_preloader
 
 # For model saving
 MODEL_ID = 1
-WEIGHTS_FILE = 'weigths_{:03d}'.format(MODEL_ID)
+WEIGHTS_FILE = 'weights/model_{:03d}'.format(MODEL_ID)
 
 # Configs
 IMAGE_WIDTH, IMAGE_HEIGHT, IMAGE_CHANNELS = 640, 480, 3
