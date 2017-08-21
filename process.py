@@ -1,5 +1,6 @@
 import scipy.io as sio
 import numpy as np
+import PIL.Image as Image
 
 # data(i).url - string for the youtube weblink for video i
 # data(i).videoname - string for the code name of the youtube video
@@ -40,25 +41,31 @@ dataset = dataset['data'][0] # contem 50 arrays
 # print(dataset[0][POSE][1][0][0])
 # print('\n')
 
-new = list()
+def process(batch_size=50):
+    if batch_size > dataset.size:
+        raise EOFError('O batch pedido é maior que a quantidade de dados disponível')
 
-for video_id in range(0, 50):
-    folder_name = dataset[video_id][FOLDER][0]
-    video = new[video_id] = list()
-    video[0] = folder_name
-    video[1] = list()
+    frame_paths = np.empty((batch_size*100), dtype='<U30')
+    poses = np.empty((batch_size*100), dtype=list)
 
-    for frame_id in range(0, 100):
-        frame = video[1][frame_id] = list()
-        frame[frame_id] = dataset[video_id][FRAME_IDS][0][frame_id]
-        # body joints
-        poses = list()
-        for joint in range(0, 7):
-            joint_x = dataset[video_id][POSE][X][joint][frame_id]
-            joint_y = dataset[video_id][POSE][Y][joint][frame_id]
-            poses.append([joint_x, joint_y])
+    frame_id = 0
+    for video in range(0, batch_size):
+        folder = str(dataset[video][FOLDER][0])
+        for i in range(0, 100):
+            # caminho para a imagem
+            path = folder + '/frame_{0:06d}.jpg'.format(dataset[video][FRAME_IDS][0][i])
+            frame_paths[frame_id] = path
 
-        frame[1] = poses
+            im = Image.open('data/frames/'+path)
 
-np.save('poses', new)
-print(new[0][0])
+            # lista de poses
+            pose = list()
+            for joint in range(0, 7):
+                joint_x = int(float(dataset[video][POSE][X][joint][i]))
+                joint_y = int(float(dataset[video][POSE][Y][joint][i]))
+                pose.append([joint_x, joint_y])
+
+            poses[frame_id] = np.array(pose)
+            frame_id += 1
+
+    return frame_paths, poses
