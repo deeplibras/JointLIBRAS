@@ -1,9 +1,7 @@
-# Based on http://visal.cs.cityu.edu.hk/static/pubs/conf/cvpr14w-hmlpe.pdf
 import os
 import tflearn
 from tflearn import layers
-from tflearn.data_utils import image_preloader
-from process import process
+from tflearn.data_utils import image_preloader as preloader
 import numpy as np
 from PIL import Image
 
@@ -12,38 +10,40 @@ MODEL_ID = 1
 WEIGHTS_FILE = 'weights/model_{:03d}'.format(MODEL_ID)
 
 # Configs
-IMAGE_WIDTH, IMAGE_HEIGHT, IMAGE_CHANNELS = 419, 236, 3
-# X, _ = image_preloader(IMAGES_PATH, [IMAGE_WIDTH, IMAGE_HEIGHT, IMAGE_CHANNELS])
+IMAGE_WIDTH, IMAGE_HEIGHT = 256, 256
 
-paths, joints = process(1)
-X = list()
-for path in paths:
-    X.append(np.array(Image.open('data/frames/' + path)))
-X = np.array(X, dtype=np.float)
-X = X.reshape((-1, IMAGE_WIDTH, IMAGE_HEIGHT, 3))
+X, _ = preloader('images.txt', image_shape=(IMAGE_WIDTH, IMAGE_HEIGHT), mode='file', categorical_labels=False)
 
-Y = list()
-for joint in joints:
-    Y.append(joint)
-Y = np.array(Y)
+Y = np.load('joints.npy')
+for i, jo in enumerate(Y):
+    img = Image.open(X.array[i])
+
+    width, height = img.size
+    scales = [ IMAGE_WIDTH / width, IMAGE_HEIGHT / height]
+
+    Y[i][::2] = jo[::2] * scales[0]
+    Y[i][1::2] = jo[1::2] * scales[1]
 
 # Network
-net = layers.input_data([None, IMAGE_WIDTH, IMAGE_HEIGHT, IMAGE_CHANNELS])
+net = layers.input_data([None, IMAGE_WIDTH, IMAGE_HEIGHT, 3])
 
-net = layers.conv_2d(net, 32, 5, padding='valid', activation='relu')
+net = layers.conv_2d(net, 32, 5, padding='valid', activation='leaky_relu')
 net = layers.max_pool_2d(net, 5)
+net = layers.dropout(net, 0.25)
 
-net = layers.conv_2d(net, 16, 3, padding='valid', activation='relu')
+net = layers.conv_2d(net, 32, 3, padding='valid', activation='leaky_relu')
 net = layers.max_pool_2d(net, 3)
+net = layers.dropout(net, 0.25)
 
-net = layers.conv_2d(net, 16, 3, padding='valid', activation='relu')
+net = layers.conv_2d(net, 16, 3, padding='valid', activation='leaky_relu')
 net = layers.max_pool_2d(net, 3)
+net = layers.dropout(net, 0.25)
 
-net = layers.fully_connected(net, 512, activation='relu')
-net = layers.dropout(net, 0.01)
-net = layers.fully_connected(net, 512, activation='relu')
-net = layers.dropout(net, 0.01)
-net = layers.fully_connected(net, 7, activation='linear')
+net = layers.fully_connected(net, 512, activation='leaky_relu')
+net = layers.dropout(net, 0.25)
+net = layers.fully_connected(net, 512, activation='linear', regularizer="L1")
+net = layers.dropout(net, 0.25)
+net = layers.fully_connected(net, 12, activation='linear')
 
 net = layers.regression(net, loss='mean_square', optimizer='adam')
 
@@ -53,15 +53,14 @@ model = tflearn.DNN(net, tensorboard_verbose=1)
 if os.path.exists(WEIGHTS_FILE+'.index'):
     print('========== Carregado =========')
     model.load(WEIGHTS_FILE)
-    model.fit(X, Y, 5, show_metric=True)
-    model.save(WEIGHTS_FILE)
+    # model.fit(X, Y, 1, show_metric=True, validation_set=0.1, batch_size=50)
+    # model.save(WEIGHTS_FILE)
 
 else:
-    model.fit(X, Y, 5, validation_set=0.1, show_metric=True) # 10% as validation
+    model.fit(X, Y, 1, validation_set=0.1, show_metric=True, batch_size=50) # 10% as validation
     model.save(WEIGHTS_FILE)
 
-print(np.array(model.predict([X[95]]), dtype=np.uint))
-print(np.array([Y[95]]))
-print("============")
-print(np.array(model.predict([X[10]]), dtype=np.uint))
-print(np.array([Y[10]]))
+from util.result_check import render
+for ind in range(0, 10):
+    predict = np.array(model.predict([X[ind]]), dtype=np.uint)
+    render(X.array[ind], predict[0], str(ind))
