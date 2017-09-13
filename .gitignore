@@ -1,4 +1,14 @@
+# Caches and "caches"
 __pycache__/
-dataset_mpii/
-dataset_youtube/
-dataset_bbc/
+images.txt
+poses.npy
+
+# Datasets
+dataset_*/
+!dataset_process/
+
+# Check folders
+load_data_check/*
+!load_data_check/.gitkeep
+result_check/*
+!result_check/!.gitkeep
