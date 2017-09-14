@@ -12,3 +12,6 @@ load_data_check/*
 !load_data_check/.gitkeep
 result_check/*
 !result_check/!.gitkeep
+
+weights/*
+!weights/!.gitkeep

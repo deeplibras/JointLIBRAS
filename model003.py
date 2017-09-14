@@ -10,11 +10,12 @@ from PIL import Image
 # For model saving
 MODEL_ID = 3
 WEIGHTS_FILE = 'weights/model_{:03d}'.format(MODEL_ID)
+ONLY_TEST = False
 
 # Configs
-IMAGE_WIDTH, IMAGE_HEIGHT, IMAGE_CHANNELS = 256, 256, 3
+IMAGE_WIDTH, IMAGE_HEIGHT, IMAGE_CHANNELS = 720, 405, 3
 
-X, _ = preloader('images.txt', image_shape=(IMAGE_WIDTH, IMAGE_HEIGHT), mode='file', categorical_labels=False)
+X, _ = preloader('images.txt', image_shape=(IMAGE_HEIGHT, IMAGE_WIDTH), mode='file', categorical_labels=False)
 
 # paths, joints = process(1)
 # X = list()
@@ -56,24 +57,25 @@ for i, jo in enumerate(Y):
 # Network
 net = layers.input_data([None, IMAGE_WIDTH, IMAGE_HEIGHT, IMAGE_CHANNELS])
 
-net = layers.conv_2d(net, 80, 10, strides=4, padding='valid', activation='relu')
-net = layers.max_pool_2d(net, 5, strides=2)
+net = layers.conv_2d(net, 64, 10, padding='valid', activation='relu')
+net = layers.max_pool_2d(net, 10)
 
-net = layers.conv_2d(net, 32, 5, padding='valid', activation='relu')
-net = layers.conv_2d(net, 32, 5, padding='valid', activation='relu')
-net = layers.max_pool_2d(net, 3)
+net = layers.conv_2d(net, 32, 6, padding='valid', activation='relu')
+net = layers.conv_2d(net, 32, 6, padding='valid', activation='relu')
+net = layers.max_pool_2d(net, 4)
 
-net = layers.conv_2d(net, 16, 3, padding='valid', activation='relu')
-net = layers.conv_2d(net, 16, 3, padding='valid', activation='relu')
-net = layers.max_pool_2d(net, 3)
+net = layers.conv_2d(net, 16, 4, padding='valid', activation='relu')
+net = layers.conv_2d(net, 16, 4, padding='valid', activation='relu')
+net = layers.max_pool_2d(net, 2)
 
-net = layers.normalization.l2_normalize(net, 0)
+# net = layers.normalization.l2_normalize(net, 0)
+net = layers.flatten(net)
 
 net = layers.fully_connected(net, 2048, activation='relu')
-net = layers.dropout(net, 0.5)
-net = layers.fully_connected(net, 1024, activation='relu', regularizer="L1")
-net = layers.dropout(net, 0.5)
-net = layers.fully_connected(net, 12, activation='relu')
+net = layers.dropout(net, 0.25)
+net = layers.fully_connected(net, 1024, activation='relu')
+net = layers.dropout(net, 0.25)
+net = layers.fully_connected(net, 18, activation='relu')
 
 net = layers.regression(net, loss='mean_square', optimizer='adam')
 
@@ -83,20 +85,26 @@ model = tflearn.DNN(net, tensorboard_verbose=1)
 if os.path.exists(WEIGHTS_FILE+'.index'):
     print('========== Carregado =========')
     model.load(WEIGHTS_FILE)
-    model.fit(X, Y, 1, validation_set=0.1, # 10% as validation
-              show_metric=True, batch_size=50, snapshot_step=200,
-              snapshot_epoch=False, run_id=WEIGHTS_FILE+ '::' +str(int(time.time())))
-    model.save(WEIGHTS_FILE)
+    if ONLY_TEST:
+        print("=== test ===")
+        print(np.array(model.predict([X[10]]), dtype=np.uint))
+        print(np.array([Y[10]], dtype=np.uint))
+    else:
+        model.fit(X, Y, 250, validation_set=0.1, # 10% as validation
+                  show_metric=True, snapshot_step=200, batch_size=10,
+                  snapshot_epoch=False, run_id=WEIGHTS_FILE+ '::' +str(int(time.time())))
+        model.save(WEIGHTS_FILE)
 
 else:
-    model.fit(X, Y, 1, validation_set=0.1, # 10% as validation
-              show_metric=True, batch_size=50, snapshot_step=200,
+    model.fit(X, Y, 250, validation_set=0.1, # 10% as validation
+              show_metric=True, snapshot_step=200, batch_size=10,
               snapshot_epoch=False, run_id=WEIGHTS_FILE+ '::' +str(int(time.time())))
     model.save(WEIGHTS_FILE)
 
-from teste import render
-for ind in range(0, 10):
-    predict = np.array(model.predict([X[ind]]), dtype=np.uint)
-    # ground  = np.array([Y[ind]])
-    render(X.array[ind], predict[0], str(ind) + "_predict")
-    # render(X.array[ind], ground[0], str(ind) + "_ground")
+if ONLY_TEST == False:
+    from util.result_check import render
+    for ind in range(0, 10):
+        predict = np.array(model.predict([X[ind]]), dtype=np.uint)
+        # ground  = np.array([Y[ind]])
+        render(X.array[ind], predict[0], str(ind) + "_predict", (IMAGE_WIDTH, IMAGE_HEIGHT))
+        # render(X.array[ind], ground[0], str(ind) + "_ground")

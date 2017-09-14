@@ -14,23 +14,36 @@ dataset = sio.loadmat('../dataset_bbc/dataset.mat')['shortbbcpose'][0]
 # 5 - train_frames
 # 6 - train_joints [0][0] is X's array and [0][1] is Y's array
 # each data are wrapped in an array, so, use [0] at final to get the values
+test = True
 X, Y = 0,1
+
+if test:
+    testOrTrainFrames = 3
+    testOrTrainJoints = 4
+else:
+    testOrTrainFrames = 5
+    testOrTrainJoints = 6
+
 dataset = dataset[0] # now i just want the first video, it has +- 38.000 frames
-counter = range(len(dataset[5][0]))
+counter = range(len(dataset[testOrTrainFrames][0]))
 
 open('../images.txt','w').close()
 images = open('../images.txt','a')
 poses = list()
 for i in counter:
-    m_poses = dataset[6]
+    m_poses = dataset[testOrTrainJoints]
 
     joints = list()
     for joint in range(9):
-        joints.append(m_poses[X][joint][i])
-        joints.append(m_poses[Y][joint][i])
+        try:
+            joints.append(m_poses[X][joint][i])
+            joints.append(m_poses[Y][joint][i])
+        except: # ignoring joints not founds (legs)
+            joints.append(0)
+            joints.append(0)
     poses.append(joints)
 
-    images.write('/dataset_bbc/1/' + str(int(dataset[5][0][i])) + ".jpg 0\n")
+    images.write('/dataset_bbc/data/1/' + str(int(dataset[testOrTrainFrames][0][i])) + ".jpg 0\n")
 
 np.save('../poses', np.array(poses))
 images.close()
