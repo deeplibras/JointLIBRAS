@@ -88,4 +88,4 @@ print(images[0])
 joints = np.array(joints)
 
 np.savetxt('../images.txt', images, fmt="%s")
-np.save('../joints', joints)
+np.save('../poses', joints)

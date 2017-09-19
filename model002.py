@@ -2,7 +2,7 @@ import os
 import tflearn
 from tflearn import layers
 from tflearn.data_utils import image_preloader
-from process import process
+from dataset_process.youtube import proccess
 import numpy as np
 from PIL import Image
 
