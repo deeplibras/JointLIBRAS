@@ -34,13 +34,11 @@ for i in counter:
     m_poses = dataset[testOrTrainJoints]
 
     joints = list()
-    for joint in range(7):
+    for joint in range(9):
         try:
-            joints.append(m_poses[X][joint][i])
-            joints.append(m_poses[Y][joint][i])
+            joints.append(m_poses[X][joint][i], m_poses[Y][joint][i])
         except: # ignoring joints not founds (legs)
-            joints.append(0)
-            joints.append(0)
+            joints.append([0,0])
     poses.append(joints)
 
     images.write('/dataset_bbc/data/1/' + str(int(dataset[testOrTrainFrames][0][i])) + ".jpg 0\n")
