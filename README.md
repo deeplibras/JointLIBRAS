@@ -29,6 +29,15 @@ This thing about root do a little mess, but it's caused by `image_preloader` fro
 [tflearn](http://tflearn.org), and it's needed to free a lot of RAM memory (It
 took almost 10Gb on a folder with 17k 128x128 images without the preloader).
 
+## BBC Pose Dataset
+The most complete dataset i found was BBC Pose Dataset, that can be found here:
+[BBC Dataset](https://www.robots.ox.ac.uk/~vgg/data/pose/index.html#downloadlink)
+It's using only the test parte of folder 1 from dataset, but it can be changed setting
+the `test` variable in `dataset_process/bbc.py` to `False`.
+The eval matlab file that comes in the dataset should be renamed to `dataset.mat`
+and pasted on `dataset_bbc` folder and the images should be pasted in `dataset_bbc/data/1` folder.
+
+
 # Models
 The first two models were based on [Heterogeneous Multi-task Learning for Human Pose Estimation with Deep Convolutional Neural Network](https://arxiv.org/abs/1406.3474) (without the window and human body detector parts), but they were tweaked a lot to work.
 The others 003 and 004 are based on the first ones and with a lot of empirical
