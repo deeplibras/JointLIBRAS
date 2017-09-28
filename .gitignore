@@ -4,14 +4,14 @@ images.txt
 poses.npy
 
 # Datasets
-dataset_*/
-!dataset_process/
+data/sets/*
+!data/sets/.gitkeep
 
 # Check folders
-load_data_check/*
-!load_data_check/.gitkeep
+load_check/*
+!load_check/.gitkeep
 result_check/*
 !result_check/!.gitkeep
 
-weights/*
-!weights/!.gitkeep
+models/weights/*
+!models/weights/!.gitkeep

@@ -1,4 +1,3 @@
-# Based on http://visal.cs.cityu.edu.hk/static/pubs/conf/cvpr14w-hmlpe.pdf
 import os
 import time
 import tflearn
@@ -9,7 +8,7 @@ from PIL import Image
 import util.distances as dis
 
 # For model saving
-MODEL_ID = 4
+MODEL_ID = 1
 WEIGHTS_FILE = 'weights/model_{:03d}'.format(MODEL_ID)
 RESTORE = True
 
@@ -28,54 +27,35 @@ for i, jo in enumerate(Y):
     Y[i][::2] = jo[::2] * scales[0]
     Y[i][1::2] = jo[1::2] * scales[1]
 
-# Network
-# rand_weights = tflearn.initializations.uniform(minval=20, maxval=IMAGE_WIDTH)
-
+# INPUT LAYER
 net = layers.input_data([None, IMAGE_HEIGHT, IMAGE_WIDTH, IMAGE_CHANNELS])
-# net = layers.dropout(net, keep_prob=.8)
-#
-# net = layers.conv_2d(net, 80, 10, strides=4, padding='valid', activation='relu')
-# net = layers.max_pool_2d(net, 5, strides=2)
-#
-# net = layers.conv_2d(net, 32, 5, padding='valid', activation='relu')
-# net = layers.conv_2d(net, 32, 5, padding='valid', activation='relu')
-# net = layers.max_pool_2d(net, 3)
-#
-# # net = layers.normalization.l2_normalize(net, 0)
-#
-# net = layers.conv_2d(net, 16, 3, padding='valid', activation='relu')
-# net = layers.conv_2d(net, 16, 3, padding='valid', activation='relu')
-# net = layers.max_pool_2d(net, 3)
-#
-# # net = layers.flatten(net)
-#
-# net = layers.fully_connected(net, 2048, activation='relu')
-# net = layers.dropout(net, keep_prob=.5)
-# net = layers.fully_connected(net, 1024, activation='relu')
-# net = layers.dropout(net, keep_prob=.5)
-# net = layers.fully_connected(net, 18, activation='relu', weights_init=rand_weights)
 
+# CONVOLUTIONAL 001
 net = layers.conv_2d(net, 32, 5, padding='valid', activation='relu')
 net = layers.max_pool_2d(net, 5)
 net = layers.dropout(net, 0.5)
 
+# CONVOLUTIONAL 002
 net = layers.conv_2d(net, 32, 3, padding='valid', activation='relu')
 net = layers.max_pool_2d(net, 3)
 net = layers.dropout(net, 0.5)
 
+# CONVOLUTIONAL 003
 net = layers.conv_2d(net, 16, 3, padding='valid', activation='relu')
 net = layers.max_pool_2d(net, 3)
 net = layers.dropout(net, 0.5)
 
+# FULLY CONNECTED
 net = layers.fully_connected(net, 512, activation='relu')
 net = layers.dropout(net, 0.5)
 net = layers.fully_connected(net, 512, activation='relu', regularizer="L1")
 net = layers.dropout(net, 0.5)
 net = layers.fully_connected(net, 16, activation='relu')
 
+# REGRESSION
 net = layers.regression(net, loss=dis.euclidian_2_2, optimizer='adam')
 
-# Model
+# DNN MODEL
 model = tflearn.DNN(net, tensorboard_verbose=1)
 
 # if os.path.exists(WEIGHTS_FILE+'.index') and RESTORE:
