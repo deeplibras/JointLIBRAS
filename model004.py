@@ -14,7 +14,7 @@ WEIGHTS_FILE = 'weights/model_{:03d}'.format(MODEL_ID)
 RESTORE = True
 
 # Configs
-IMAGE_WIDTH, IMAGE_HEIGHT, IMAGE_CHANNELS = 320, 240, 3
+IMAGE_WIDTH, IMAGE_HEIGHT, IMAGE_CHANNELS = int(320/2), int(240/2), 3
 
 X, _ = preloader('images.txt', image_shape=(IMAGE_WIDTH, IMAGE_HEIGHT), mode='file', categorical_labels=False)
 
@@ -32,71 +32,55 @@ for i, jo in enumerate(Y):
 # rand_weights = tflearn.initializations.uniform(minval=20, maxval=IMAGE_WIDTH)
 
 net = layers.input_data([None, IMAGE_HEIGHT, IMAGE_WIDTH, IMAGE_CHANNELS])
-# net = layers.dropout(net, keep_prob=.8)
-#
-# net = layers.conv_2d(net, 80, 10, strides=4, padding='valid', activation='relu')
-# net = layers.max_pool_2d(net, 5, strides=2)
-#
-# net = layers.conv_2d(net, 32, 5, padding='valid', activation='relu')
-# net = layers.conv_2d(net, 32, 5, padding='valid', activation='relu')
-# net = layers.max_pool_2d(net, 3)
-#
-# # net = layers.normalization.l2_normalize(net, 0)
-#
-# net = layers.conv_2d(net, 16, 3, padding='valid', activation='relu')
-# net = layers.conv_2d(net, 16, 3, padding='valid', activation='relu')
-# net = layers.max_pool_2d(net, 3)
-#
-# # net = layers.flatten(net)
-#
-# net = layers.fully_connected(net, 2048, activation='relu')
-# net = layers.dropout(net, keep_prob=.5)
-# net = layers.fully_connected(net, 1024, activation='relu')
-# net = layers.dropout(net, keep_prob=.5)
-# net = layers.fully_connected(net, 18, activation='relu', weights_init=rand_weights)
 
-net = layers.conv_2d(net, 32, 5, padding='valid', activation='relu')
+net = layers.conv_2d(net, 32, 5, padding='valid', activation='leaky_relu')
 net = layers.max_pool_2d(net, 5)
 net = layers.dropout(net, 0.5)
 
-net = layers.conv_2d(net, 32, 3, padding='valid', activation='relu')
+net = layers.conv_2d(net, 32, 3, padding='valid', activation='leaky_relu')
 net = layers.max_pool_2d(net, 3)
 net = layers.dropout(net, 0.5)
 
-net = layers.conv_2d(net, 16, 3, padding='valid', activation='relu')
+net = layers.conv_2d(net, 16, 3, padding='valid', activation='leaky_relu')
 net = layers.max_pool_2d(net, 3)
 net = layers.dropout(net, 0.5)
 
-net = layers.fully_connected(net, 512, activation='relu')
+net = layers.fully_connected(net, 512, activation='leaky_relu')
 net = layers.dropout(net, 0.5)
-net = layers.fully_connected(net, 512, activation='relu', regularizer="L1")
+net = layers.fully_connected(net, 512, activation='leaky_relu')
 net = layers.dropout(net, 0.5)
-net = layers.fully_connected(net, 16, activation='relu')
+net = layers.fully_connected(net, len(Y[0]), activation='leaky_relu')
 
-net = layers.regression(net, loss=dis.euclidian_2_2, optimizer='adam')
+net = layers.regression(net, loss=dis.corrected_euclidian, optimizer='adam')
 
 # Model
-model = tflearn.DNN(net, tensorboard_verbose=1)
+model = tflearn.DNN(net, tensorboard_verbose=2)
 
-# if os.path.exists(WEIGHTS_FILE+'.index') and RESTORE:
-#     print('========== Carregado =========')
-#     model.load(WEIGHTS_FILE)
-#     model.fit(X, Y, 50, validation_set=0.1, # 10% as validation
-#               show_metric=True, batch_size=15, snapshot_step=200,
-#               snapshot_epoch=False, run_id=WEIGHTS_FILE+ '::' +str(int(time.time())))
-#     model.save(WEIGHTS_FILE)
-#
-# else:
-#     model.fit(X, Y, 50, validation_set=0.1, # 10% as validation
-#               show_metric=True, batch_size=15, snapshot_step=200,
-#               snapshot_epoch=False, run_id=WEIGHTS_FILE+ '::' +str(int(time.time())))
-#     model.save(WEIGHTS_FILE)
+if os.path.exists(WEIGHTS_FILE+'.index') and RESTORE:
+    print('========== Carregado =========')
+    model.load(WEIGHTS_FILE)
+    model.fit(X, Y, 100, validation_set=0.1, # 10% as validation
+              show_metric=True, batch_size=15, snapshot_step=500,
+              snapshot_epoch=False, run_id=WEIGHTS_FILE+ '::' +str(int(time.time())))
+    model.save(WEIGHTS_FILE)
+
+else:
+    model.fit(X, Y, 100, validation_set=0.1, # 10% as validation
+              show_metric=True, batch_size=15, snapshot_step=500,
+              snapshot_epoch=False, run_id=WEIGHTS_FILE+ '::' +str(int(time.time())))
+    model.save(WEIGHTS_FILE)
 
 from util.result_check import render
-for ind in range(1000, 1010):
+for ind in [5,205,405,605,805,905]:
     predict = np.array(model.predict([X[ind]]), dtype=np.uint)
     print(predict)
     print(X.array[ind])
-    # ground  = np.array([Y[ind]])
     render(X.array[ind], predict[0], str(ind) + "_predict", (IMAGE_WIDTH, IMAGE_HEIGHT))
-    # render(X.array[ind], ground[0], str(ind) + "_ground")
+
+from PIL import Image
+img = Image.open("./img.png")
+img = img.convert("RGB").resize((IMAGE_WIDTH, IMAGE_HEIGHT), Image.ANTIALIAS)
+img = np.asarray(img)
+
+predict = np.array(model.predict([img]), dtype=np.uint)
+render("./img.png", predict[0],"img_predict", (IMAGE_WIDTH, IMAGE_HEIGHT))
