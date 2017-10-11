@@ -10,7 +10,7 @@ import util.distances as dis
 from util.result_check import render
 
 # For model saving
-MODEL_ID = 7
+MODEL_ID = 8
 WEIGHTS_FILE = 'weights/model_{:03d}'.format(MODEL_ID)
 RESTORE = True
 
@@ -54,7 +54,7 @@ net = layers.fully_connected(net, 512)
 net = layers.dropout(net, 0.5)
 net = layers.fully_connected(net, len(Y[0]))
 
-net = layers.regression(net, loss=dis.manhatan, optimizer='adam')
+net = layers.regression(net, loss=dis.corrected_euclidean, optimizer='adam')
 
 # Model
 model = tflearn.DNN(net, tensorboard_verbose=2)
@@ -62,13 +62,13 @@ model = tflearn.DNN(net, tensorboard_verbose=2)
 if os.path.exists(WEIGHTS_FILE+'.index') and RESTORE:
     print('========== Carregado =========')
     model.load(WEIGHTS_FILE)
-    model.fit(X, Y, 1, validation_set=0.1, # 10% as validation
+    model.fit(X, Y, 200, validation_set=0.1, # 10% as validation
               show_metric=True, batch_size=20, snapshot_step=500,
               snapshot_epoch=False, run_id=WEIGHTS_FILE+ '::' +str(int(time.time())))
     model.save(WEIGHTS_FILE)
 
 else:
-    model.fit(X, Y, 1, validation_set=0.1, # 10% as validation
+    model.fit(X, Y, 200, validation_set=0.1, # 10% as validation
               show_metric=True, batch_size=20, snapshot_step=500,
               snapshot_epoch=False, run_id=WEIGHTS_FILE+ '::' +str(int(time.time())))
     model.save(WEIGHTS_FILE)
